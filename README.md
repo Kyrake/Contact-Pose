@@ -11,7 +11,10 @@ This project based on the dataset ContactPose: A Dataset of Grasps with Object C
 
 
 
-https://github.com/Kyrake/Contact-Pose/assets/142335932/dd800aa7-67ec-4dc3-9a89-f0840a891427
+https://github.com/Kyrake/Contact-Pose/assets/142335932/02114067-5ca6-4f51-9aee-799117160534
+
+
+
 
 
 
