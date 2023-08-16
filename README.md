@@ -5,6 +5,11 @@ This project based on the dataset ContactPose: A Dataset of Grasps with Object C
 
 ## Results
 
+<figure>
+<img src="images/IMG_8071.mp4">
+<figcaption>Example ContactPose data: Contact Maps, 3D hand pose, and RGB-D grasp images for functional grasps.</figcaption>
+</figure>
+
 
 # [ContactPose](https://contactpose.cc.gatech.edu)
 
