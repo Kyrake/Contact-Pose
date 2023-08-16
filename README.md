@@ -3,10 +3,15 @@
 # Introduction
 This project based on the dataset ContactPose: A Dataset of Grasps with Object Contact and Hand Pose. The goal is to levarege the quantity of hand and grasping poses in order to find a lower dimensional interconnection between the involved joints. This could reduce the control effort for robotics hands. To this purpose a kinematic model of a human hand is developed to simulate the grasping movement, instead of just singular poses. The sequqnces of the movement are then analyzed with PCA and ICA algorithms in order to find lower dimensional grasping configurations. The results are than applied on the RBO Hand 3.
 
+## Kinematic Model
+
+
+
 ## Results
 
 
-https://github.com/Kyrake/Contact-Pose/blob/main/images/IMG_8071.mp4
+
+https://github.com/Kyrake/Contact-Pose/assets/142335932/dd800aa7-67ec-4dc3-9a89-f0840a891427
 
 
 
