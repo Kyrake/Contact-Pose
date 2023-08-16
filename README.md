@@ -6,9 +6,7 @@ This project based on the dataset ContactPose: A Dataset of Grasps with Object C
 ## Results
 
 
-<video width="320" height="240" controls>
-  <source src="images/IMG_8071.mp4" type="video/mp4">
-</video>
+https://github.com/Kyrake/Contact-Pose/blob/main/images/IMG_8071.mp4
 
 
 
