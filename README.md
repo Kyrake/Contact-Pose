@@ -7,7 +7,7 @@ This project based on the dataset ContactPose: A Dataset of Grasps with Object C
 
 
 <video width="320" height="240" controls>
-  <source src="images/IMG_8071" type="video/mp4">
+  <source src="images/IMG_8071.mp4" type="video/mp4">
 </video>
 
 
