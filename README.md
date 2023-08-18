@@ -1,15 +1,14 @@
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/contactpose-a-dataset-of-grasps-with-object/grasp-contact-prediction-on-contactpose)](https://paperswithcode.com/sota/grasp-contact-prediction-on-contactpose?p=contactpose-a-dataset-of-grasps-with-object)
 
 # Introduction
-This project based on the dataset ContactPose: A Dataset of Grasps with Object Contact and Hand Pose. The goal is to levarege the quantity of hand and grasping poses in order to find a lower dimensional interconnection between the involved joints. This could reduce the control effort for robotics hands. To this purpose a kinematic model of a human hand is developed to simulate the grasping movement, instead of just singular poses. The sequqnces of the movement are then analyzed with PCA and ICA algorithms in order to find lower dimensional grasping configurations. The results are than applied on the RBO Hand 3.
+This project based on the dataset [ContactPose: A Dataset of Grasps with Object Contact and Hand Pose](https://github.com/facebookresearch/ContactPose). The goal is to levarege the quantity of hand and grasping poses in order to find a lower dimensional interconnection between the involved joints. This could reduce the control effort for robotics hands. To this purpose a kinematic model of a human hand is developed to simulate the grasping movement, instead of just singular poses. The sequqnces of the movement are then analyzed with PCA and ICA algorithms in order to find lower dimensional grasping configurations. The results are than applied on the RBO Hand 3.\
+A report of the setup and results of the project can be found here:
 
 ## Kinematic Model
 
 
 
 https://github.com/Kyrake/Contact-Pose/assets/142335932/1beab1b5-49f8-47b0-b5d6-e18e6b1d56bb
-
-
 
 
 
