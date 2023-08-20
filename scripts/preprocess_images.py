@@ -1,11 +1,11 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# Code by Samarth Brahmbhatt
+# (c) Facebook, Inc. and its affiliates. Confidential and proprietary.
+
 """
 Preprocesses images for ML training by cropping (RGB and depth), and 
 randomizing background (RGB only)
 NOTE: Requites rendering setup, see docs/rendering.py
 """
-import init_paths
+import scripts.init_paths
 from utilities.dataset import ContactPose, get_object_names
 from utilities.rendering import DepthRenderer
 import utilities.misc as mutils
@@ -164,8 +164,7 @@ if __name__ == '__main__':
   parser.add_argument('--background_images_dir', required=True,
                       help='Directory containing background images e.g. COCO')
   parser.add_argument('--crop_size', default=256, type=int)
-  parser.add_argument('--no_mask_refinement', action='store_false',
-                      dest='do_grabcut',
+  parser.add_argument('--no_refinement', action='store_false', dest='do_grabcut',
                       help='No refinement of masks with GrabCut')
   args = parser.parse_args()
 

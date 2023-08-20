@@ -4,26 +4,18 @@
 script to download ContactPose data from Dropbox
 URLs in data/urls.json
 """
-import init_paths
-import cv2
 import os
 import json
-import shutil
 from tqdm.autonotebook import tqdm
-import utilities.networking as nutils
+import requests
 from zipfile import ZipFile
 
 osp = os.path
 
 
-def is_nonempty_dir(dir):
-  if osp.isdir(dir):
-    return next(os.scandir(dir), None) is not None
-  else:
-    return False
-
-
 class ContactPoseDownloader(object):
+  with open(osp.join('data', 'proxies.json'), 'r') as f:
+    proxies = json.load(f)
   def __init__(self):
     self.data_dir = osp.join('data', 'contactpose_data')
     if not osp.isdir(self.data_dir):
@@ -34,23 +26,67 @@ class ContactPoseDownloader(object):
 
 
   @staticmethod
-  def _unzip_and_del(filename, dst_dir=None, progress=True, filter_fn=None):
+  def _path_level(path):
+    return len(path.strip(osp.sep).split(osp.sep))
+
+  
+  @staticmethod
+  def _download_url(url, filename, progress=True):
+    """
+    taken from https://stackoverflow.com/a/37573701
+    """
+    # Streaming, so we can iterate over the response.
+    r = requests.get(url, stream=True, proxies=ContactPoseDownloader.proxies)
+    # Total size in bytes.
+    total_size = int(r.headers.get('content-length', 0))
+    block_size = 1024 #1 Kibibyte
+    if progress:
+      t=tqdm(total=total_size, unit='iB', unit_scale=True)
+    done = True
+    datalen = 0
+    with open(filename, 'wb') as f:
+      itr = r.iter_content(block_size)
+      while True:
+        try:
+          try:
+            data = next(itr)
+          except StopIteration:
+            break
+          if progress:
+            t.update(len(data))
+          datalen += len(data)
+          f.write(data)
+        except KeyboardInterrupt:
+          done = False
+          print('Cancelled')
+    if progress:
+      t.close()
+    if (not done) or (total_size != 0 and datalen != total_size):
+      print("ERROR, something went wrong")
+      try:
+        os.remove(filename)
+      except OSError as e:
+        print(e)
+      return False
+    else:
+      return True
+
+  
+  @staticmethod
+  def _unzip_and_del(filename, dst_dir=None, progress=True):
     if dst_dir is None:
       dst_dir, _ = osp.split(filename)
     if len(dst_dir) == 0:
       dst_dir = '.'
     with ZipFile(filename) as f:
-      # members = None means everything
-      members = None if filter_fn is None else \
-          list(filter(filter_fn, f.namelist()))
-      f.extractall(dst_dir, members=members)
+      f.extractall(dst_dir)
     os.remove(filename)
 
 
   def download_grasps(self):
     filename = osp.join(self.data_dir, 'grasps.zip')
     print('Downloading grasps...')
-    if not nutils.download_url(self.urls['grasps'], filename):
+    if not self._download_url(self.urls['grasps'], filename):
       print('Download unsuccessful')
       return
     print('Extracting...')
@@ -70,7 +106,7 @@ class ContactPoseDownloader(object):
     p_id = 'full{:d}_{:s}'.format(p_num, intent)
     filename = osp.join(self.data_dir, '{:s}_contact_maps.zip'.format(p_id))
     print('Downloading {:d} {:s} contact maps...'.format(p_num, intent))
-    if not nutils.download_url(self.urls['contact_maps'][p_id], filename):
+    if not self._download_url(self.urls['contact_maps'][p_id], filename):
       print('Download unsuccessful')
       return
     print('Extracting...')
@@ -80,7 +116,7 @@ class ContactPoseDownloader(object):
   def download_markers(self):
     filename = osp.join('data', 'markers.zip')
     print('Downloading 3D model marker locations...')
-    if not nutils.download_url(self.urls['object_marker_locations'], filename):
+    if not self._download_url(self.urls['object_marker_locations'], filename):
       print('Download unsuccessful')
       return
     print('Extracting...')
@@ -90,118 +126,63 @@ class ContactPoseDownloader(object):
   def download_3d_models(self):
     filename = osp.join('data', '3Dmodels.zip')
     print('Downloading 3D models...')
-    if not nutils.download_url(self.urls['object_models'], filename):
+    if not self._download_url(self.urls['object_models'], filename):
       print('Download unsuccessful')
       return
     print('Extracting...')
     self._unzip_and_del(filename, osp.join('data', 'object_models'))
 
-  
-  def download_depth_images(self, p_num, intent, dload_dir,
-                            include_objects=None):
-    self.download_images(p_num, intent, dload_dir, include_objects,
-                         download_color=False, download_depth=True)
 
-  
-  def download_color_images(self, p_num, intent, dload_dir,
-                            include_objects=None):
-    self.download_images(p_num, intent, dload_dir, include_objects,
-                         download_color=True, download_depth=False)
-  
-  
   def download_images(self, p_num, intent, dload_dir,
-                      include_objects=None, download_color=True,
-                      download_depth=True):
+                      include_objects=None):
     assert osp.isdir(dload_dir),\
       'Image download dir {:s} does not exist'.format(dload_dir)
     p_id = 'full{:d}_{:s}'.format(p_num, intent)
-    if download_color and (not download_depth):
-      urls = self.urls['videos']['color']
-    else:
-      urls = self.urls['images']
-    
     # check if already extracted
-    dirs_to_check = []
-    if download_color:
-      dirs_to_check.append('color')
-    if download_depth:
-      dirs_to_check.append('depth')
-    ok = True
     if osp.isdir(osp.join(self.data_dir, p_id)):
       sess_dir = osp.join(self.data_dir, p_id)
       for object_name in next(os.walk(sess_dir))[1]:
         if include_objects is not None and object_name not in include_objects:
           continue
         images_dir = osp.join(sess_dir, object_name, 'images_full')
-        if not osp.isdir(images_dir):
-          continue
-        for cam_name in next(os.walk(images_dir))[1]:
-          for check_name in dirs_to_check:
-            check_dir = osp.join(images_dir, cam_name, check_name)
-            if is_nonempty_dir(check_dir):
-              print('{:s} {:s} already has extracted images, please delete {:s}'.
-                    format(p_id, object_name, check_dir))
-              ok = False
-    if not ok:
-      return
+        if osp.isdir(images_dir):
+          print('{:s} {:s} already has extracted images, please delete {:s}'.
+                format(p_id, object_name, images_dir))
+          return
     
     # download and extract
     sess_dir = osp.join(dload_dir, p_id)
     if not osp.isdir(sess_dir):
-      print('Creating {:s}'.format(sess_dir))
-    os.makedirs(sess_dir, exist_ok=True)
+      os.mkdir(sess_dir)
+      print('Created {:s}'.format(sess_dir))
     print('Downloading {:s} images...'.format(p_id))
-    object_names = list(urls[p_id].keys())
+    object_names = list(self.urls['images'][p_id].keys())
     if include_objects is None:
       include_objects = object_names[:]
-    filenames_to_extract = {}
+    filenames = []
     for object_name in tqdm(include_objects):
       if object_name not in object_names:
         print('{:d} {:s} does not have {:s}'.format(p_num, intent, object_name))
         continue
       filename = osp.join(sess_dir, '{:s}_images.zip'.format(object_name))
-      url = urls[p_id][object_name]
+      url = self.urls['images'][p_id][object_name]
       print(object_name)
-      if nutils.download_url(url, filename):
-        filenames_to_extract[object_name] = filename
+      if self._download_url(url, filename):
+        filenames.append(filename)
       else:
         print('{:s} {:s} Download unsuccessful'.format(p_id, object_name))
         return
     
     print('Extracting...')
-    for object_name, filename in tqdm(filenames_to_extract.items()):
+    for object_name, filename in tqdm(zip(include_objects, filenames)):
       obj_dir = osp.join(sess_dir, object_name)
-      os.makedirs(obj_dir, exist_ok=True)
+      if not osp.isdir(obj_dir):
+        os.mkdir(obj_dir)
       self._unzip_and_del(filename, obj_dir)
       for filename in next(os.walk(obj_dir))[-1]:
-        if download_color and (not download_depth):
-          if '.mp4' not in filename:
-            continue
-          camera_name = filename.replace('.mp4', '')
-          video_filename = osp.join(obj_dir, filename)
-          im_dir = osp.join(obj_dir, 'images_full', camera_name, 'color')
-          os.makedirs(im_dir, exist_ok=True)
-          cap = cv2.VideoCapture(video_filename)
-          if not cap.isOpened():
-            print('Could not read {:s}'.format(video_filename))
-            return
-          count = 0
-          while True:
-            ok, im = cap.read()
-            if not ok:
-              break
-            filename = osp.join(im_dir, 'frame{:03d}.png'.format(count))
-            cv2.imwrite(filename, im)
-            count += 1
-          os.remove(video_filename)
-        else:
-          if '.zip' not in filename:
-            continue
-          filter_fn = (lambda x: 'color' not in x) if (not download_color) \
-              else None
-          self._unzip_and_del(osp.join(obj_dir, filename), progress=False,
-                              filter_fn=filter_fn)
-
+        if '.zip' not in filename:
+          continue
+        self._unzip_and_del(osp.join(obj_dir, filename), progress=False)
       # symlink
       if osp.realpath(dload_dir) != osp.realpath(self.data_dir):
         src = osp.join(obj_dir, 'images_full')
@@ -210,6 +191,7 @@ class ContactPoseDownloader(object):
           os.makedirs(dst_dir)
         dst = osp.join(dst_dir, 'images_full')
         os.symlink(src, dst)
+    
 
 
 if __name__ == '__main__':
@@ -218,7 +200,6 @@ if __name__ == '__main__':
   from itertools import product
   parser = argparse.ArgumentParser()
   parser.add_argument('--type', choices=('grasps', 'markers', '3Dmodels',
-                                         'color_images', 'depth_images',
                                          'images', 'contact_maps'),
                       required=True)
   parser.add_argument('--p_nums', default=None,
@@ -229,8 +210,7 @@ if __name__ == '__main__':
                       help='Comma separated object names. Used only for image '+\
                         'download. All other types download data for all '+\
                         'objects in that particular p_num, intent combo')
-  parser.add_argument('--images_dload_dir',
-                      default=osp.join('data', 'contactpose_data'),
+  parser.add_argument('--images_dload_dir', default=osp.join('data', 'contactpose_data'),
                       help='Directory where images will be downloaded. '
                       'They will be symlinked to the appropriate location')
   args = parser.parse_args()
@@ -255,25 +235,15 @@ if __name__ == '__main__':
   else:
     nums = [int(args.p_nums)]
   intents = args.intents.split(',')
-  include_objects = args.object_names
-  if include_objects is not None:
-    include_objects = include_objects.split(',')
-    include_objects = list(set(include_objects))  # remove duplicates
-  
   for p_num, intent in product(nums, intents):
     p_id = 'full{:d}_{:s}'.format(p_num, intent)
     print('####### {:s} #######'.format(p_id))
     if args.type == 'contact_maps':
       downloader.download_contact_maps(p_num, intent)
-    elif args.type == 'color_images':
-      downloader.download_color_images(p_num, intent,
-                                 osp.expanduser(args.images_dload_dir),
-                                 include_objects=include_objects)
-    elif args.type == 'depth_images':
-      downloader.download_depth_images(p_num, intent,
-                                 osp.expanduser(args.images_dload_dir),
-                                 include_objects=include_objects)
     elif args.type == 'images':
+      include_objects = args.object_names
+      if include_objects is not None:
+        include_objects = include_objects.split(',')
       downloader.download_images(p_num, intent,
                                  osp.expanduser(args.images_dload_dir),
                                  include_objects=include_objects)

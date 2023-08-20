@@ -19,8 +19,7 @@ def get_object_names(p_num, intent, ignore_hp=True):
   """
   sess_dir = 'full{:d}_{:s}'.format(p_num, intent)
   sess_dir = osp.join('data', 'contactpose_data', sess_dir)
-  ignored_objects = ('hands', 'palm_print') if ignore_hp else ()
-  return [o for o in next(os.walk(sess_dir))[1] if o not in ignored_objects]
+  return [o for o in next(os.walk(sess_dir))[1] if o not in ['hands', 'palm_print']]
 
 
 def get_intents(p_num, object_name):
@@ -29,7 +28,7 @@ def get_intents(p_num, object_name):
   """
   out = []
   for ins in ('use', 'handoff'):
-    sess_dir = 'full{:d}_{:s}'.format(p_num, ins)
+    sess_dir = 'full{:d}_{:s}'.format(p_num, object_name)
     sess_dir = osp.join('data', 'contactpose_data', sess_dir, object_name)
     if osp.isdir(sess_dir):
       out.append(ins)
@@ -54,7 +53,7 @@ class ContactPose(object):
   Base class for accessing the ContactPose dataset
   """
   _mano_dicts = None  # class variable so that large data is not loaded repeatedly
-  def __init__(self, p_num, intent, object_name, mano_pose_params=15,
+  def  __init__(self, p_num, intent, object_name, mano_pose_params=15,
                load_mano=True):
     """
     load_mano: Flag can be used to prevent loading MANO hand models, which is
