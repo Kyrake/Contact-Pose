@@ -27,7 +27,7 @@ https://github.com/Kyrake/Contact-Pose/assets/142335932/0eb49e1c-6e56-4317-8b86-
 1. First follow the steps to get started with the ContactPose framework: https://github.com/facebookresearch/ContactPose/blob/master/docs/doc.md
 2. Copy ContactPose/data/contactpose_data/full1_use and store it in a new directory ContactPose/data/contactpose_data/full51_use . This is important as the embedded open3D simulator just accepts this kind of structure as input in order to visualize our results
 
-# For this Project the following files are important and added as own work to the ContactPose framework :
+## Project Setup
 
 
 The following image shows the basic pipeline on how the files work together:
