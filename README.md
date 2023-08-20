@@ -1,8 +1,9 @@
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/contactpose-a-dataset-of-grasps-with-object/grasp-contact-prediction-on-contactpose)](https://paperswithcode.com/sota/grasp-contact-prediction-on-contactpose?p=contactpose-a-dataset-of-grasps-with-object)
 
 # Introduction
 This project based on the dataset [ContactPose: A Dataset of Grasps with Object Contact and Hand Pose](https://github.com/facebookresearch/ContactPose). The goal is to levarege the quantity of hand and grasping poses in order to find a lower dimensional interconnection between the involved joints. This could reduce the control effort for robotics hands. To this purpose a kinematic model of a human hand is developed to simulate the grasping movement, instead of just singular poses. The sequqnces of the movement are then analyzed with PCA and ICA algorithms in order to find lower dimensional grasping configurations. The results are than applied on the RBO Hand 3.\
 A report of the setup and results of the project can be found here: [Contact Pose Report](https://github.com/Kyrake/Contact-Pose/blob/main/report/Contact%20Pose%20Report.pdf)
+
+
 
 ## Kinematic Model
 
@@ -21,66 +22,61 @@ https://github.com/Kyrake/Contact-Pose/assets/142335932/1beab1b5-49f8-47b0-b5d6-
 https://github.com/Kyrake/Contact-Pose/assets/142335932/0eb49e1c-6e56-4317-8b86-7099a65b4255
 
 
+# Installation
+
+1. First follow the steps to get started with the ContactPose framework: https://github.com/facebookresearch/ContactPose/blob/master/docs/doc.md
+2. Copy ContactPose/data/contactpose_data/full1_use and store it in a new directory ContactPose/data/contactpose_data/full51_use . This is important as the embedded open3D simulator just accepts this kind of structure as input in order to visualize our results
+
+# For this Project the following files are important and added as own work to the ContactPose framework :
+
+
+The following image shows the basic pipeline on how the files work together:
+
+![Pipeline](Diag.png)
+
+
+1. Preprocessing.py:
+    A subset of the hand postures provided by the ContactPose framework can be filtered in stored in an array. Types of objects, number of people
+    and modi can be adjusted. At the moment both modi are used. Furthermore the resulting array is stored as .npy file for further usage.
+    
+2. KinematicModel.py:
+    This file inhibits all the functions relating to the Kinematic Model. The functions for calculation the angels for each finger, getting link length     of a handposture, and the homogeneous transformations for each finger lie here.
+    IMPORTANT: Here lies also the function transformation(). This function orientates all hand postures in such a way, that the indexfinger is the         x-axis and the index and middle finger are spanning the xy plane. This is the basis for calculating the angles, as all hand postures must have         their wrists in (0,0)
+    
+3. CreatetHand.py:
+   This file creates a  hand posture in zero configuration or with own chosen angles with the function createPuppet(). On the other hand modifyPuppet() 
+   is used for the angles calculated by KinematicModel.py. It also uses the homogenous transformations to get the cartesian coordinates of the angles 
+   average link length and finally makes it possible to visualize the hand posture
+   
+4. PCA.py, ICA.py:
+   Those file ares using PCA or ICA on the stored array from Preprocessing.py respectively. 
+   
+5. FilterFunctions.py
+   Functions that allow easy generation of subsets. For instant all joint coordinates of all people holding an apple, one person using each object etc.
+   Those subset aren't stored as file, but just during run time. Also this file inhibits the function that transforms the joint coordinate in a json      format, that is usable for the Open3D simulator
+   
+5. Handposeanimator.py:
+   This class handposeanimator is the foundation for the animation of the grasping movements that results from the pca and ica analysis.  
+   
+6. Visualization.py:
+   Stores hand posture in cartesian coordinates in json file. The embedded open3D simulation environment provided by the ContactPose dataset, is very
+   particular about the structure and naming of the input file, therefore creating a new json file should have the same structure as the files in ContactPose/data/contactpose_data. Best copy one of the already provided folders and continue with the numeration e.g: ContactPose/data/contactpose_data/full51_use/apple is the default path for storing hand posture you want to visualize
+
+
+# Further Improvement :
+1. Add joint constraints directly to the kinematic model. Constraint limits are suggested in http://www.ifp.illinois.edu/~yingwu/papers/Humo00.pdf
+
+# Known Bugs :
+1. If a json file gets corrupted or the structure gets disrupted, copy & paste the json file of the provided contact_pose data in order to restore the needed structre. Than you can simply overvwrite the joints entries with new hand postures and the function provided by Visualization.py
+2. If you use functions of scripts/show_contactmap.py (for animation e.g), sometimes it is required to import import scripts.init_paths in show_contactmap.py instead of import init_paths. But if call the Open 3D visualization from the terminal, it has to be set just to import init_paths.
 
 
 
-# [ContactPose](https://contactpose.cc.gatech.edu)
 
-<figure>
-<img src="readme_images/teaser.png" width="700">
-<figcaption>Example ContactPose data: Contact Maps, 3D hand pose, and RGB-D grasp images for functional grasps.</figcaption>
-</figure>
 
-Code for the ContactPose dataset released in the following paper:
 
-[ContactPose: A Dataset of Grasps with Object Contact and Hand Pose](https://contactpose.cc.gatech.edu) - 
 
-[Samarth Brahmbhatt](https://samarth-robo.github.io/),
-[Chengcheng Tang](https://scholar.google.com/citations?hl=en&user=WbG27wQAAAAJ),
-[Christopher D. Twigg](https://scholar.google.com/citations?hl=en&user=aN-lQ0sAAAAJ),
-[Charles C. Kemp](http://charliekemp.com/), and
-[James Hays](https://www.cc.gatech.edu/~hays/),
 
-**ECCV 2020**.
 
-- [Explore the dataset](https://contactpose.cc.gatech.edu/contactpose_explorer.html)
-- [hand-object contact ML code](https://github.com/samarth-robo/ContactPose-ML)
-- [ROS code](https://github.com/samarth-robo/contactpose_ros_utils) used for recording the dataset
 
-## Citation
-```
-@InProceedings{Brahmbhatt_2020_ECCV,
-author = {Brahmbhatt, Samarth and Tang, Chengcheng and Twigg, Christopher D. and Kemp, Charles C. and Hays, James},
-title = {{ContactPose}: A Dataset of Grasps with Object Contact and Hand Pose},
-booktitle = {The European Conference on Computer Vision (ECCV)},
-month = {August},
-year = {2020}
-}
-```
 
-# [Documentation Link](docs/doc.md)
-
-# [Data Changelog](docs/data_changelog.md)
-We have made some data and annotation corrections. The link above mentions the correction date and the exact data that was corrected.
-If you got that data before the correction date, please re-download it.
-
-# Licensing
-- Code: [MIT License](LICENSE.txt)
-- 3D models: each model has its own license, see `README.txt` and `licenses.json` in the [downloads](docs/doc.md#3d-models-and-3d-printing)
-- All other data: [MIT License](LICENSE.txt)
-
-# Updates
-- :heavy_check_mark: [Fix annotation errors](https://github.com/facebookresearch/ContactPose/issues/7) in data from participants 31-35.
-- :black_square_button: Use [rclone](https://github.com/rclone/rclone) for Dropbox downloads
-- :black_square_button: [Make depth images optional in cropping script](https://github.com/facebookresearch/ContactPose/issues/6)
-- :heavy_check_mark: [Robust networking utilities](utilities/networking.py) for data download with exponential backoff in case of connection failure
-- :heavy_check_mark: [Speed up dataset download by organizing images into videos](docs/doc.md#download-rgb-images-only)
-- :heavy_check_mark: [Release object 3D models](docs/doc.md#3d-models-and-3d-printing)
-- :heavy_check_mark: [Code for cropping images around hand-object](demo.ipynb)
-- :heavy_check_mark: [Release contact modeling ML code](https://github.com/samarth-robo/ContactPose-ML)
-- :black_square_button: Release more data analysis code
-- :heavy_check_mark: [Release MANO fitting code](utilities/mano_fitting.py) | [demo at end of notebook](demo.ipynb)
-- :heavy_check_mark: [RGB-D image background randomization support](docs/doc.md#image-preprocessing)
-- :heavy_check_mark: **new** Release [ROS code](https://github.com/samarth-robo/contactpose_ros_utils) used for recording the dataset
-- :heavy_check_mark: [MANO and object mesh rendering](docs/rendering.md)
-- :black_square_button: Documentation using [Read the Docs](https://readthedocs.org)
